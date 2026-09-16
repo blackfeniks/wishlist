@@ -1,0 +1,747 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Вишлист</title>
+<meta name="description" content="Список идей для подарков.">
+<meta name="theme-color" content="#F5F5F7" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)">
+<link rel="icon" href="icon.png" type="image/png">
+<link rel="apple-touch-icon" href="icon.png">
+<style>
+/* ============================================================
+   Вишлист — оформление. Тёмная тема включается сама по системе.
+   ============================================================ */
+
+:root {
+  color-scheme: light dark;
+  --bg: #F5F5F7;
+  --card: #FFFFFF;
+  --card-2: #F0F0F3;
+  --sep: rgba(0, 0, 0, .10);
+  --text: #1D1D1F;
+  --text-2: #5C5C61;
+  --text-3: #6E6E73;
+  --accent: #0071E3;
+  --accent-ink: #FFFFFF;
+  --accent-soft: rgba(0, 113, 227, .10);
+  --fill: #1D1D1F;
+  --fill-ink: #FFFFFF;
+  --star: #C68A22;
+  --star-off: rgba(0, 0, 0, .16);
+  --shadow-hover: 0 4px 16px rgba(0, 0, 0, .08);
+  --shadow-pop: 0 20px 60px rgba(0, 0, 0, .22), 0 2px 8px rgba(0, 0, 0, .08);
+  --scrim: rgba(0, 0, 0, .40);
+  --glass: rgba(28, 28, 30, .88);
+  --danger: #D93B30;
+  --sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, sans-serif;
+  --ease: cubic-bezier(.32, .72, 0, 1);
+  --safe-l: env(safe-area-inset-left, 0px);
+  --safe-r: env(safe-area-inset-right, 0px);
+  --safe-b: env(safe-area-inset-bottom, 0px);
+  --safe-t: env(safe-area-inset-top, 0px);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #000000;
+    --card: #1C1C1E;
+    --card-2: #2C2C2E;
+    --sep: rgba(255, 255, 255, .14);
+    --text: #F5F5F7;
+    --text-2: #A1A1A6;
+    --text-3: #8E8E93;
+    --accent: #2997FF;
+    --accent-ink: #00204A;
+    --accent-soft: rgba(41, 151, 255, .16);
+    --fill: #F5F5F7;
+    --fill-ink: #1D1D1F;
+    --star: #EFB350;
+    --star-off: rgba(255, 255, 255, .22);
+    --shadow-hover: 0 4px 18px rgba(0, 0, 0, .6);
+    --shadow-pop: 0 24px 64px rgba(0, 0, 0, .8);
+    --scrim: rgba(0, 0, 0, .60);
+    --glass: rgba(58, 58, 60, .88);
+    --danger: #FF6B5E;
+  }
+}
+
+/* ---------- Основа ---------- */
+
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--sans);
+  font-size: 16px;
+  line-height: 1.45;
+  -webkit-font-smoothing: antialiased;
+  overflow-wrap: break-word;
+}
+body.is-locked { overflow: hidden; }
+img { display: block; max-width: 100%; }
+button { font: inherit; color: inherit; }
+[hidden] { display: none !important; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+.wrap {
+  max-width: 1160px;
+  margin: 0 auto;
+  padding: 0 max(16px, var(--safe-r)) calc(48px + var(--safe-b)) max(16px, var(--safe-l));
+}
+@media (min-width: 760px) {
+  .wrap { padding-left: max(40px, var(--safe-l)); padding-right: max(40px, var(--safe-r)); }
+}
+
+/* ---------- Шапка и порядок ---------- */
+
+.top { padding: calc(var(--safe-t) + 40px) 0 0; }
+.top__title {
+  margin: 0;
+  font-size: clamp(32px, 8vw, 44px);
+  line-height: 1.07;
+  font-weight: 700;
+  letter-spacing: -0.022em;
+}
+
+.sort { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 20px; }
+.chip {
+  min-height: 40px;
+  padding: 0 16px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--card);
+  color: var(--text-2);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background .2s var(--ease), color .2s var(--ease);
+}
+.chip[aria-pressed="true"] { background: var(--fill); color: var(--fill-ink); }
+
+/* ---------- Сетка карточек ---------- */
+
+.grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px; padding-top: 20px; }
+@media (min-width: 560px) { .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (min-width: 1000px) { .grid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 24px; } }
+
+.card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  width: 100%;
+  padding: 12px 12px 16px;
+  border: 0;
+  border-radius: 18px;
+  background: var(--card);
+  text-align: left;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: transform .3s var(--ease), box-shadow .2s var(--ease);
+}
+.card:active { transform: scale(.97); transition-duration: .12s; }
+@media (hover: hover) { .card:hover { box-shadow: var(--shadow-hover); } }
+
+.card__photo {
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  border-radius: 12px;
+  overflow: hidden;
+  background: var(--card-2);
+}
+.card__photo img { width: 100%; height: 100%; object-fit: cover; }
+
+.card__title {
+  display: -webkit-box;
+  margin-top: 14px;
+  font-size: 18px;
+  line-height: 1.25;
+  font-weight: 600;
+  letter-spacing: -0.014em;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.price { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; margin-top: 6px; }
+.price:empty { display: none; }
+.price__main { font-size: 16px; font-weight: 600; }
+.price__alt { font-size: 14px; color: var(--text-3); }
+
+.stars { display: inline-flex; gap: 2px; margin-top: 8px; }
+.stars svg { width: 14px; height: 14px; display: block; }
+
+.badge {
+  position: absolute;
+  top: 22px; left: 22px;
+  z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px 6px 9px;
+  border-radius: 999px;
+  background: var(--glass);
+  -webkit-backdrop-filter: blur(14px);
+  backdrop-filter: blur(14px);
+  color: #FFFFFF;
+  font-size: 12.5px;
+  font-weight: 600;
+}
+.card.is-taken { opacity: .55; }
+.card.is-taken .card__photo img { filter: grayscale(1); }
+
+.empty { padding: 72px 0; text-align: center; color: var(--text-3); font-size: 17px; }
+
+/* ---------- Панель поверх страницы ---------- */
+
+.scrim {
+  position: fixed; inset: 0; z-index: 60;
+  background: var(--scrim);
+  opacity: 0;
+  transition: opacity .2s var(--ease);
+}
+.scrim.is-open { opacity: 1; }
+
+.sheet {
+  position: fixed;
+  z-index: 61;
+  left: 0; right: 0; bottom: 0;
+  max-height: calc(100% - max(24px, var(--safe-t)));
+  display: flex;
+  flex-direction: column;
+  background: var(--card);
+  border-radius: 22px 22px 0 0;
+  box-shadow: var(--shadow-pop);
+  overflow: hidden;
+  transform: translateY(100%);
+  transition: transform .32s var(--ease);
+}
+.sheet.is-open { transform: translateY(0); }
+
+@media (min-width: 760px) {
+  .sheet {
+    left: 50%; right: auto; top: 50%; bottom: auto;
+    width: min(560px, calc(100vw - 64px));
+    max-height: calc(100% - 64px);
+    border-radius: 22px;
+    opacity: 0;
+    transform: translate(-50%, -46%) scale(.97);
+    transition: transform .26s var(--ease), opacity .19s var(--ease);
+  }
+  .sheet.is-open { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+}
+
+.sheet__scroll { flex: 1 1 auto; min-height: 0; overflow-y: auto; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; }
+
+.sheet__close {
+  position: absolute; top: 14px; right: 14px; z-index: 5;
+  width: 34px; height: 34px;
+  display: grid; place-items: center;
+  border: 0; border-radius: 999px;
+  background: var(--glass);
+  -webkit-backdrop-filter: blur(14px);
+  backdrop-filter: blur(14px);
+  color: #FFFFFF;
+  cursor: pointer;
+}
+.sheet__close::after { content: ""; position: absolute; inset: -6px; }
+
+.detail__photo { aspect-ratio: 4 / 3; background: var(--card-2); }
+.detail__photo:empty { aspect-ratio: auto; height: 64px; background: none; }
+.detail__photo img { width: 100%; height: 100%; object-fit: cover; }
+
+.detail__body { padding: 22px 20px calc(28px + var(--safe-b)); }
+@media (min-width: 760px) { .detail__body { padding: 24px 28px 30px; } }
+
+.detail__title {
+  margin: 0;
+  font-size: clamp(24px, 6vw, 30px);
+  line-height: 1.15;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+.detail__body .price { margin-top: 10px; }
+.detail__body .price__main { font-size: 20px; }
+.detail__body .price__alt { font-size: 16px; }
+.detail__body .stars { margin-top: 10px; }
+.detail__body .stars svg { width: 17px; height: 17px; }
+
+.actions { display: grid; gap: 10px; margin-top: 26px; }
+
+/* ---------- Кнопки ---------- */
+
+.btn {
+  min-height: 50px;
+  padding: 0 20px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-radius: 999px;
+  background: var(--card-2);
+  color: var(--text);
+  font-size: 16px;
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+  transition: transform .12s var(--ease), opacity .2s var(--ease);
+}
+.btn:active { transform: scale(.98); }
+@media (hover: hover) { .btn:hover { opacity: .85; } }
+.btn--main { background: var(--accent); color: var(--accent-ink); }
+.btn--soft { background: var(--accent-soft); color: var(--accent); }
+.btn--quiet { background: none; color: var(--text-2); font-weight: 500; min-height: 44px; }
+
+.taken {
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  min-height: 50px;
+  padding: 0 16px;
+  border-radius: 999px;
+  background: var(--card-2);
+  color: var(--text-2);
+  font-size: 15px;
+  font-weight: 500;
+}
+
+/* ---------- Сообщение ---------- */
+
+.toast {
+  position: fixed; left: 50%; bottom: calc(28px + var(--safe-b)); z-index: 90;
+  max-width: calc(100vw - 32px);
+  padding: 12px 20px;
+  border-radius: 999px;
+  background: var(--glass);
+  -webkit-backdrop-filter: blur(18px);
+  backdrop-filter: blur(18px);
+  color: #FFFFFF;
+  font-size: 15px;
+  font-weight: 500;
+  opacity: 0;
+  pointer-events: none;
+  transform: translate(-50%, 20px);
+  transition: opacity .19s var(--ease), transform .19s var(--ease);
+}
+.toast.is-on { opacity: 1; transform: translate(-50%, 0); }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { transition-duration: .001ms !important; animation-duration: .001ms !important; }
+}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <header class="top">
+    <h1 class="top__title">Вишлист</h1>
+    <div class="sort" role="group" aria-label="Порядок">
+      <button class="chip" type="button" data-sort="wish" aria-pressed="true">По желанию</button>
+      <button class="chip" type="button" data-sort="cheap" aria-pressed="false">Дешевле</button>
+      <button class="chip" type="button" data-sort="dear" aria-pressed="false">Дороже</button>
+    </div>
+  </header>
+
+  <main class="grid" id="grid" aria-label="Подарки"></main>
+  <p class="empty" id="empty" hidden>Здесь пока пусто</p>
+</div>
+
+<div class="scrim" id="scrim" hidden></div>
+
+<div class="sheet" id="sheet" role="dialog" aria-modal="true" aria-labelledby="detailTitle" hidden>
+  <button class="sheet__close" id="sheetClose" type="button" aria-label="Закрыть">
+    <svg width="15" height="15" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+      <path d="M3.5 3.5l9 9M12.5 3.5l-9 9" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+    </svg>
+  </button>
+  <div class="sheet__scroll" id="sheetScroll">
+    <div class="detail" id="detail"></div>
+  </div>
+</div>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>document.write('<script src="wishlist.js?v=' + Date.now() + '"><\/script>');</script>
+<script>
+/* ============================================================
+   Общие мелочи для сайта и редактора.
+   ============================================================ */
+(function () {
+  'use strict';
+
+  // Приводит данные к одному виду. Понимает и старый формат файла.
+  function normalize(src) {
+    var d = { updated: 0, eurToRub: 95, sheetUrl: '', items: [] };
+    if (!src || typeof src !== 'object') return d;
+    d.updated = Number(src.updated) || 0;
+    if (Number(src.eurToRub) > 0) d.eurToRub = Number(src.eurToRub);
+    if (typeof src.sheetUrl === 'string') d.sheetUrl = src.sheetUrl.trim();
+
+    var list = Array.isArray(src.items) ? src.items : [];
+    list.forEach(function (i) {
+      if (!i || typeof i !== 'object' || i.bought) return;
+      var photo = typeof i.photo === 'string' ? i.photo : '';
+      if (!photo && Array.isArray(i.photos) && i.photos[0]) photo = i.photos[0].full || i.photos[0].thumb || '';
+      var url = typeof i.url === 'string' ? i.url : '';
+      if (!url && Array.isArray(i.links) && i.links[0]) url = i.links[0].url || '';
+      d.items.push({
+        id: String(i.id || ''),
+        title: String(i.title || ''),
+        priceEur: Number(i.priceEur) > 0 ? Number(i.priceEur) : 0,
+        wish: Math.min(5, Math.max(0, Math.round(Number(i.wish) || 0))),
+        url: String(url).trim(),
+        photo: String(photo),
+        taken: !!(i.taken || i.reserved)
+      });
+    });
+    return d;
+  }
+
+  // Запрос к Гугл-таблице. Работает через тег <script>, поэтому браузер не блокирует.
+  function askSheet(sheetUrl, params, done) {
+    if (!sheetUrl) { done(null); return; }
+    var name = 'wl_' + Date.now() + '_' + Math.floor(Math.random() * 1e6);
+    var tag = document.createElement('script');
+    var finished = false;
+    var timer = setTimeout(function () { finish(null); }, 12000);
+
+    function finish(result) {
+      if (finished) return;
+      finished = true;
+      clearTimeout(timer);
+      window[name] = function () {};
+      if (tag.parentNode) tag.parentNode.removeChild(tag);
+      done(Array.isArray(result) ? result.map(String) : null);
+    }
+
+    window[name] = finish;
+    var q = [];
+    Object.keys(params || {}).forEach(function (k) {
+      q.push(encodeURIComponent(k) + '=' + encodeURIComponent(params[k]));
+    });
+    q.push('callback=' + name);
+    q.push('t=' + Date.now());
+    tag.src = sheetUrl + (sheetUrl.indexOf('?') >= 0 ? '&' : '?') + q.join('&');
+    tag.onerror = function () { finish(null); };
+    document.head.appendChild(tag);
+  }
+
+  window.WL = { normalize: normalize, askSheet: askSheet };
+})();
+
+/* ============================================================
+   Вишлист — логика сайта.
+   ============================================================ */
+(function () {
+  'use strict';
+
+  var DATA = WL.normalize(window.WISHLIST);
+  var ITEMS = DATA.items;
+  var RATE = DATA.eurToRub;
+
+  var $ = function (s) { return document.querySelector(s); };
+
+  function el(tag, cls, text) {
+    var n = document.createElement(tag);
+    if (cls) n.className = cls;
+    if (text != null) n.textContent = text;
+    return n;
+  }
+
+  function svg(markup, size) {
+    var n = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    n.setAttribute('viewBox', '0 0 20 20');
+    n.setAttribute('width', size);
+    n.setAttribute('height', size);
+    n.setAttribute('fill', 'none');
+    n.setAttribute('aria-hidden', 'true');
+    n.innerHTML = markup;
+    return n;
+  }
+
+  var STAR = 'M10 1.9l2.42 4.9 5.41.79-3.92 3.82.93 5.39L10 14.25l-4.84 2.55.93-5.39L2.17 7.59l5.41-.79L10 1.9z';
+  var LOCK = '<path d="M5.5 9V6.5a4.5 4.5 0 019 0V9" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/><rect x="3.8" y="9" width="12.4" height="8.2" rx="2.4" fill="currentColor"/>';
+
+  function num(n) { return Math.round(n).toLocaleString('ru-RU'); }
+
+  // ---------- цена и звёзды ----------
+
+  function priceRow(item) {
+    var row = el('div', 'price');
+    var eur = item.priceEur;
+    if (!(eur > 0)) return row;
+    row.appendChild(el('span', 'price__main', num(eur) + ' €'));
+    if (RATE > 0) {
+      var v = eur * RATE;
+      var step = v >= 10000 ? 1000 : (v >= 1000 ? 100 : 10);
+      row.appendChild(el('span', 'price__alt', '≈ ' + num(Math.round(v / step) * step) + ' ₽'));
+    }
+    return row;
+  }
+
+  function stars(v) {
+    var box = el('div', 'stars');
+    box.setAttribute('role', 'img');
+    box.setAttribute('aria-label', 'Желание: ' + v + ' из 5');
+    for (var i = 1; i <= 5; i++) {
+      var on = i <= v;
+      box.appendChild(svg('<path d="' + STAR + '" fill="' + (on ? 'var(--star)' : 'none') +
+        '" stroke="' + (on ? 'var(--star)' : 'var(--star-off)') + '" stroke-width="1.4" stroke-linejoin="round"/>', 15));
+    }
+    return box;
+  }
+
+  function photoBox(item, cls) {
+    var box = el('div', cls);
+    if (item.photo) {
+      var img = el('img');
+      img.src = item.photo;
+      img.alt = item.title;
+      img.decoding = 'async';
+      box.appendChild(img);
+    }
+    return box;
+  }
+
+  // ---------- кто что дарит ----------
+
+  var fromSheet = [];     // что отмечено в таблице
+  var mine = [];          // что отметили с этого устройства сейчас
+
+  function isTaken(item) {
+    return item.taken || fromSheet.indexOf(item.id) >= 0 || mine.indexOf(item.id) >= 0;
+  }
+
+  var lastAsk = 0;
+  function loadTaken() {
+    if (!DATA.sheetUrl || Date.now() - lastAsk < 20000) return;
+    lastAsk = Date.now();
+    WL.askSheet(DATA.sheetUrl, {}, function (ids) {
+      if (!ids) return;
+      fromSheet = ids;
+      refresh();
+    });
+  }
+
+  function give(item) {
+    if (mine.indexOf(item.id) < 0) mine.push(item.id);
+    WL.askSheet(DATA.sheetUrl, { take: item.id, title: item.title }, function (ids) {
+      if (ids) { fromSheet = ids; refresh(); }
+    });
+  }
+
+  // ---------- список ----------
+
+  var sort = 'wish';
+  var grid = $('#grid');
+
+  function sorted() {
+    return ITEMS.map(function (item, index) { return { item: item, index: index }; })
+      .sort(function (a, b) {
+        var ta = isTaken(a.item) ? 1 : 0, tb = isTaken(b.item) ? 1 : 0;
+        if (ta !== tb) return ta - tb;
+        if (sort !== 'wish') {
+          var pa = a.item.priceEur, pb = b.item.priceEur;
+          if (pa && !pb) return -1;
+          if (pb && !pa) return 1;
+          if (pa !== pb) return sort === 'cheap' ? pa - pb : pb - pa;
+        }
+        if (a.item.wish !== b.item.wish) return b.item.wish - a.item.wish;
+        return a.index - b.index;
+      })
+      .map(function (x) { return x.item; });
+  }
+
+  function card(item) {
+    var c = el('button', 'card');
+    c.type = 'button';
+    if (isTaken(item)) {
+      c.classList.add('is-taken');
+      var badge = el('span', 'badge');
+      badge.appendChild(svg(LOCK, 13));
+      badge.appendChild(el('span', null, 'Занято'));
+      c.appendChild(badge);
+    }
+    c.appendChild(photoBox(item, 'card__photo'));
+    c.appendChild(el('span', 'card__title', item.title || 'Без названия'));
+    c.appendChild(priceRow(item));
+    c.appendChild(stars(item.wish));
+    c.addEventListener('click', function () { openItem(item); });
+    return c;
+  }
+
+  function render() {
+    grid.textContent = '';
+    sorted().forEach(function (item) { grid.appendChild(card(item)); });
+    $('#empty').hidden = ITEMS.length > 0;
+    grid.hidden = ITEMS.length === 0;
+  }
+
+  function refresh() {
+    render();
+    if (current) buildDetail(current);
+  }
+
+  Array.prototype.forEach.call(document.querySelectorAll('.sort .chip'), function (b) {
+    b.addEventListener('click', function () {
+      sort = b.getAttribute('data-sort');
+      Array.prototype.forEach.call(document.querySelectorAll('.sort .chip'), function (x) {
+        x.setAttribute('aria-pressed', x === b ? 'true' : 'false');
+      });
+      render();
+    });
+  });
+
+  // ---------- карточка подарка ----------
+
+  var scrim = $('#scrim');
+  var sheet = $('#sheet');
+  var detail = $('#detail');
+  var current = null;
+  var confirming = false;
+  var pushed = false;
+  var hideTimer = 0;
+
+  function buildDetail(item) {
+    detail.textContent = '';
+    detail.appendChild(photoBox(item, 'detail__photo'));
+
+    var body = el('div', 'detail__body');
+    var h = el('h2', 'detail__title', item.title || 'Без названия');
+    h.id = 'detailTitle';
+    body.appendChild(h);
+    body.appendChild(priceRow(item));
+    body.appendChild(stars(item.wish));
+
+    var actions = el('div', 'actions');
+
+    if (item.url) {
+      var a = el('a', 'btn btn--soft', 'Открыть ссылку');
+      a.href = item.url;
+      a.target = '_blank';
+      a.rel = 'noopener noreferrer';
+      actions.appendChild(a);
+    }
+
+    if (isTaken(item)) {
+      var taken = el('div', 'taken');
+      taken.appendChild(svg(LOCK, 16));
+      taken.appendChild(el('span', null, mine.indexOf(item.id) >= 0 ? 'Вы дарите это. Спасибо!' : 'Этот подарок уже занят'));
+      actions.appendChild(taken);
+    } else if (confirming) {
+      var yes = el('button', 'btn btn--main', 'Да, дарю');
+      yes.type = 'button';
+      yes.addEventListener('click', function () {
+        confirming = false;
+        give(item);
+        refresh();
+      });
+      var no = el('button', 'btn btn--quiet', 'Отмена');
+      no.type = 'button';
+      no.addEventListener('click', function () { confirming = false; buildDetail(item); });
+      actions.appendChild(yes);
+      actions.appendChild(no);
+    } else {
+      var g = el('button', 'btn btn--main', 'Я дарю это');
+      g.type = 'button';
+      g.addEventListener('click', function () { confirming = true; buildDetail(item); });
+      actions.appendChild(g);
+    }
+
+    body.appendChild(actions);
+    detail.appendChild(body);
+  }
+
+  function openItem(item) {
+    current = item;
+    confirming = false;
+    clearTimeout(hideTimer);
+    buildDetail(item);
+    if (!pushed) { history.pushState({ sheet: 1 }, ''); pushed = true; }
+
+    document.body.classList.add('is-locked');
+    scrim.hidden = false;
+    sheet.hidden = false;
+    sheet.style.transform = '';
+    $('#sheetScroll').scrollTop = 0;
+    requestAnimationFrame(function () {
+      requestAnimationFrame(function () {
+        scrim.classList.add('is-open');
+        sheet.classList.add('is-open');
+      });
+    });
+  }
+
+  function closeSheet(fromHistory) {
+    if (sheet.hidden || !current) return;
+    if (!fromHistory && pushed) { history.back(); return; }
+    pushed = false;
+    current = null;
+    document.body.classList.remove('is-locked');
+    sheet.style.transform = '';
+    scrim.style.opacity = '';
+    sheet.classList.remove('is-open');
+    scrim.classList.remove('is-open');
+    hideTimer = setTimeout(function () {
+      sheet.hidden = true;
+      scrim.hidden = true;
+      detail.textContent = '';
+    }, 320);
+  }
+
+  $('#sheetClose').addEventListener('click', function () { closeSheet(); });
+  scrim.addEventListener('click', function () { closeSheet(); });
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeSheet(); });
+  window.addEventListener('popstate', function () { if (pushed) closeSheet(true); });
+
+  // Свайп вниз закрывает карточку на телефоне
+  (function () {
+    var startY = 0, dy = 0, active = false;
+    var scroller = $('#sheetScroll');
+    sheet.addEventListener('touchstart', function (e) {
+      active = window.innerWidth < 760 && scroller.scrollTop <= 0 && e.touches.length === 1;
+      startY = active ? e.touches[0].clientY : 0;
+      dy = 0;
+    }, { passive: true });
+    sheet.addEventListener('touchmove', function (e) {
+      if (!active) return;
+      dy = e.touches[0].clientY - startY;
+      if (dy <= 0) { dy = 0; sheet.style.transform = ''; return; }
+      if (e.cancelable) e.preventDefault();
+      sheet.style.transition = 'none';
+      sheet.style.transform = 'translateY(' + dy + 'px)';
+      scrim.style.opacity = String(Math.max(0, 1 - dy / 400));
+    }, { passive: false });
+    sheet.addEventListener('touchend', function () {
+      if (!active) return;
+      active = false;
+      sheet.style.transition = '';
+      if (dy > 110) closeSheet();
+      else { sheet.style.transform = ''; scrim.style.opacity = ''; }
+    });
+  })();
+
+  // ---------- сообщение ----------
+
+  var toastEl = $('#toast');
+  var toastTimer = 0;
+  function toast(text) {
+    toastEl.textContent = text;
+    toastEl.classList.add('is-on');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function () { toastEl.classList.remove('is-on'); }, 2400);
+  }
+
+  // ---------- старт ----------
+
+  render();
+  loadTaken();
+  document.addEventListener('visibilitychange', function () {
+    if (document.visibilityState === 'visible') loadTaken();
+  });
+})();
+</script>
+</body>
+</html>
