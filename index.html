@@ -330,13 +330,84 @@ button { font: inherit; color: inherit; }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { transition-duration: .001ms !important; animation-duration: .001ms !important; }
 }
+
+/* ---------- Режим правки ---------- */
+
+.editbar {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 10px;
+  margin-top: 16px; padding: 12px;
+  border-radius: 18px; background: var(--card);
+}
+.editbar .btn { min-height: 44px; }
+.editbar__rate { display: flex; align-items: center; gap: 8px; font-size: 14px; color: var(--text-2); }
+.editbar__rate .input { width: 90px; min-height: 44px; padding: 8px 12px; }
+.editbar__exit { margin-left: auto; }
+
+.status { padding: 64px 0; text-align: center; color: var(--text-3); font-size: 17px; }
+
+.field { display: grid; gap: 6px; }
+.field__label { font-size: 13px; font-weight: 500; color: var(--text-2); }
+.input {
+  width: 100%; min-height: 46px; padding: 10px 14px;
+  border: 1px solid var(--sep); border-radius: 12px;
+  background: var(--bg); color: var(--text); font: inherit; font-size: 16px;
+}
+.input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+
+.form__head {
+  flex: 0 0 auto; display: grid; grid-template-columns: 1fr auto 1fr; align-items: center;
+  padding: 6px 8px; border-bottom: 1px solid var(--sep);
+}
+.form__head .btn { justify-self: start; padding: 0 12px; }
+.form__head .form__done { justify-self: end; color: var(--accent); font-weight: 600; }
+.form__title { margin: 0; font-size: 17px; font-weight: 600; }
+.form__body { padding: 18px 20px calc(28px + var(--safe-b)); display: grid; gap: 16px; }
+
+.photo-pick {
+  position: relative; width: 100%; aspect-ratio: 4 / 3;
+  display: grid; place-items: center; padding: 0;
+  border: 1.5px dashed var(--sep); border-radius: 14px;
+  background: var(--bg); color: var(--accent);
+  font-size: 16px; font-weight: 600; overflow: hidden; cursor: pointer;
+}
+.photo-pick img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.photo-pick.has-photo { border-style: solid; }
+.photo-pick.has-photo span {
+  position: absolute; right: 10px; bottom: 10px; padding: 6px 12px; border-radius: 999px;
+  background: var(--glass); color: #fff; font-size: 13px;
+}
+
+.starpick { display: flex; gap: 2px; }
+.starpick button { width: 44px; height: 44px; display: grid; place-items: center; border: 0; background: none; color: var(--star-off); cursor: pointer; }
+.starpick button.is-on { color: var(--star); }
+
+.check { display: flex; align-items: center; gap: 10px; min-height: 44px; font-size: 16px; cursor: pointer; }
+.check input { width: 22px; height: 22px; accent-color: var(--accent); }
+
+.btn--danger { color: var(--danger); }
+.btn[disabled] { opacity: .5; pointer-events: none; }
+
+.code-body { padding: 56px 20px calc(28px + var(--safe-b)); display: grid; gap: 14px; }
+.code-body__title { margin: 0; font-size: 22px; font-weight: 700; }
+.code-body__hint { margin: 0; font-size: 15px; color: var(--text-2); }
+#addBtn { flex: 1 1 100%; }
+
 </style>
 </head>
 <body>
 
 <div class="wrap">
   <header class="top">
-    <h1 class="top__title">Вишлист</h1>
+    <h1 class="top__title" id="title">Вишлист</h1>
+
+    <div class="editbar" id="editbar" hidden>
+      <button class="btn btn--main" type="button" id="addBtn">Добавить подарок</button>
+      <label class="editbar__rate">Курс ₽ за €
+        <input class="input" id="rateInput" type="number" inputmode="decimal" min="0" step="0.5">
+      </label>
+      <button class="btn btn--quiet editbar__exit" type="button" id="exitBtn">Выйти из правки</button>
+    </div>
+
     <div class="sort" role="group" aria-label="Порядок">
       <button class="chip" type="button" data-sort="wish" aria-pressed="true">По желанию</button>
       <button class="chip" type="button" data-sort="cheap" aria-pressed="false">Дешевле</button>
@@ -345,119 +416,63 @@ button { font: inherit; color: inherit; }
   </header>
 
   <main class="grid" id="grid" aria-label="Подарки"></main>
-  <p class="empty" id="empty" hidden>Здесь пока пусто</p>
+  <p class="status" id="status">Загрузка…</p>
 </div>
 
 <div class="scrim" id="scrim" hidden></div>
 
+<!-- Карточка подарка -->
 <div class="sheet" id="sheet" role="dialog" aria-modal="true" aria-labelledby="detailTitle" hidden>
-  <button class="sheet__close" id="sheetClose" type="button" aria-label="Закрыть">
-    <svg width="15" height="15" viewBox="0 0 16 16" fill="none" aria-hidden="true">
-      <path d="M3.5 3.5l9 9M12.5 3.5l-9 9" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-    </svg>
+  <button class="sheet__close" data-close type="button" aria-label="Закрыть">
+    <svg width="15" height="15" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M3.5 3.5l9 9M12.5 3.5l-9 9" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
   </button>
-  <div class="sheet__scroll" id="sheetScroll">
-    <div class="detail" id="detail"></div>
+  <div class="sheet__scroll"><div class="detail" id="detail"></div></div>
+</div>
+
+<!-- Ввод кода -->
+<div class="sheet" id="codeSheet" role="dialog" aria-modal="true" aria-labelledby="codeTitle" hidden>
+  <button class="sheet__close" data-close type="button" aria-label="Закрыть">
+    <svg width="15" height="15" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M3.5 3.5l9 9M12.5 3.5l-9 9" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+  </button>
+  <form class="code-body" id="codeForm">
+    <h2 class="code-body__title" id="codeTitle">Правка вишлиста</h2>
+    <p class="code-body__hint">Введите секретный код.</p>
+    <input class="input" id="codeInput" type="password" autocomplete="off" autocapitalize="off" spellcheck="false">
+    <button class="btn btn--main" type="submit" id="codeBtn">Войти</button>
+  </form>
+</div>
+
+<!-- Форма подарка -->
+<div class="sheet" id="form" role="dialog" aria-modal="true" aria-labelledby="formTitle" hidden>
+  <div class="form__head">
+    <button class="btn btn--quiet" type="button" data-close>Отмена</button>
+    <h2 class="form__title" id="formTitle">Подарок</h2>
+    <button class="btn btn--quiet form__done" type="button" id="formDone">Готово</button>
+  </div>
+  <div class="sheet__scroll">
+    <div class="form__body">
+      <button class="photo-pick" type="button" id="photoBtn"><img id="photoImg" alt="" hidden><span id="photoText">Выбрать фото</span></button>
+      <input type="file" id="photoInput" accept="image/*" hidden>
+      <label class="field"><span class="field__label">Название</span><input class="input" id="fTitle" type="text" autocomplete="off"></label>
+      <label class="field"><span class="field__label">Цена в евро</span><input class="input" id="fPrice" type="number" inputmode="decimal" min="0" step="1"></label>
+      <div class="field"><span class="field__label">Насколько хочу</span><div class="starpick" id="fStars"></div></div>
+      <label class="field"><span class="field__label">Ссылка</span><input class="input" id="fUrl" type="url" inputmode="url" placeholder="https://" autocomplete="off"></label>
+      <label class="check"><input type="checkbox" id="fTaken"><span>Занято</span></label>
+      <button class="btn btn--quiet btn--danger" type="button" id="formDelete">Удалить подарок</button>
+    </div>
   </div>
 </div>
 
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
-<script>document.write('<script src="wishlist.js?v=' + Date.now() + '"><\/script>');</script>
 <script>
-/* ============================================================
-   Общие мелочи для сайта и редактора.
-   ============================================================ */
 (function () {
   'use strict';
 
-  // Приводит данные к одному виду. Понимает и старый формат файла.
-  function normalize(src) {
-    var d = { updated: 0, eurToRub: 95, sheetUrl: '', items: [] };
-    if (!src || typeof src !== 'object') return d;
-    d.updated = Number(src.updated) || 0;
-    if (Number(src.eurToRub) > 0) d.eurToRub = Number(src.eurToRub);
-    if (typeof src.sheetUrl === 'string') d.sheetUrl = src.sheetUrl.trim();
-
-    var list = Array.isArray(src.items) ? src.items : [];
-    list.forEach(function (i) {
-      if (!i || typeof i !== 'object' || i.bought) return;
-      var photo = typeof i.photo === 'string' ? i.photo : '';
-      if (!photo && Array.isArray(i.photos) && i.photos[0]) photo = i.photos[0].full || i.photos[0].thumb || '';
-      var url = typeof i.url === 'string' ? i.url : '';
-      if (!url && Array.isArray(i.links) && i.links[0]) url = i.links[0].url || '';
-      d.items.push({
-        id: String(i.id || ''),
-        title: String(i.title || ''),
-        priceEur: Number(i.priceEur) > 0 ? Number(i.priceEur) : 0,
-        wish: Math.min(5, Math.max(0, Math.round(Number(i.wish) || 0))),
-        url: String(url).trim(),
-        photo: String(photo),
-        taken: !!(i.taken || i.reserved)
-      });
-    });
-    return d;
-  }
-
-  // Запрос к Гугл-таблице. Сначала обычным способом, если не вышло — через тег <script>.
-  function askSheet(sheetUrl, params, done) {
-    if (!sheetUrl) { done(null); return; }
-    var q = [];
-    Object.keys(params || {}).forEach(function (k) {
-      q.push(encodeURIComponent(k) + '=' + encodeURIComponent(params[k]));
-    });
-    q.push('t=' + Date.now());
-    var url = sheetUrl + (sheetUrl.indexOf('?') >= 0 ? '&' : '?') + q.join('&');
-
-    if (!window.fetch) { viaScript(url, done); return; }
-    var ctrl = window.AbortController ? new AbortController() : null;
-    var timer = setTimeout(function () { if (ctrl) ctrl.abort(); }, 15000);
-    fetch(url, ctrl ? { signal: ctrl.signal } : {})
-      .then(function (r) { if (!r.ok) throw new Error('status'); return r.json(); })
-      .then(function (data) {
-        clearTimeout(timer);
-        if (!Array.isArray(data)) throw new Error('format');
-        done(data.map(String));
-      })
-      .catch(function () {
-        clearTimeout(timer);
-        viaScript(url, done);
-      });
-  }
-
-  function viaScript(url, done) {
-    var name = 'wl_' + Date.now() + '_' + Math.floor(Math.random() * 1e6);
-    var tag = document.createElement('script');
-    var finished = false;
-    var timer = setTimeout(function () { finish(null); }, 12000);
-
-    function finish(result) {
-      if (finished) return;
-      finished = true;
-      clearTimeout(timer);
-      window[name] = function () {};
-      if (tag.parentNode) tag.parentNode.removeChild(tag);
-      done(Array.isArray(result) ? result.map(String) : null);
-    }
-
-    window[name] = finish;
-    tag.src = url + '&callback=' + name;
-    tag.onerror = function () { finish(null); };
-    document.head.appendChild(tag);
-  }
-
-  window.WL = { normalize: normalize, askSheet: askSheet };
-})();
-
-/* ============================================================
-   Вишлист — логика сайта.
-   ============================================================ */
-(function () {
-  'use strict';
-
-  var DATA = WL.normalize(window.WISHLIST);
-  var ITEMS = DATA.items;
-  var RATE = DATA.eurToRub;
+  var API = 'https://wishlist.blackfeniks42.workers.dev/';
+  var CODE_KEY = 'wishlist:code';
+  var CACHE_KEY = 'wishlist:cache';
+  var PHOTO_SIDE = 900, PHOTO_Q = 0.72;
 
   var $ = function (s) { return document.querySelector(s); };
 
@@ -482,17 +497,69 @@ button { font: inherit; color: inherit; }
   var STAR = 'M10 1.9l2.42 4.9 5.41.79-3.92 3.82.93 5.39L10 14.25l-4.84 2.55.93-5.39L2.17 7.59l5.41-.79L10 1.9z';
   var LOCK = '<path d="M5.5 9V6.5a4.5 4.5 0 019 0V9" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/><rect x="3.8" y="9" width="12.4" height="8.2" rx="2.4" fill="currentColor"/>';
 
+  function store(key, value) {
+    try {
+      if (value == null) localStorage.removeItem(key);
+      else localStorage.setItem(key, value);
+    } catch (e) {}
+  }
+  function read(key) {
+    try { return localStorage.getItem(key); } catch (e) { return null; }
+  }
+
   function num(n) { return Math.round(n).toLocaleString('ru-RU'); }
 
-  // ---------- цена и звёзды ----------
+  // ---------- связь с хранилищем ----------
+
+  function api(path, body) {
+    var opts = body ? { method: 'POST', body: JSON.stringify(body), headers: { 'Content-Type': 'text/plain;charset=UTF-8' } } : { cache: 'no-store' };
+    return fetch(API + path, opts).then(function (r) {
+      return r.json().catch(function () { return {}; }).then(function (d) {
+        if (!r.ok && !d.error) d.error = 'Ошибка ' + r.status;
+        return d;
+      });
+    });
+  }
+
+  var data = null;
+
+  function setData(d) {
+    if (!d || !Array.isArray(d.items)) return;
+    data = { rate: Number(d.rate) || 0, items: d.items };
+    store(CACHE_KEY, JSON.stringify(data));
+    render();
+    if (current) {
+      var fresh = findItem(current.id);
+      if (fresh) { current = fresh; if (!sheet.hidden) buildDetail(fresh); }
+    }
+  }
+
+  function findItem(id) {
+    if (!data) return null;
+    for (var i = 0; i < data.items.length; i++) if (data.items[i].id === id) return data.items[i];
+    return null;
+  }
+
+  var lastLoad = 0;
+  function load() {
+    lastLoad = Date.now();
+    api('data').then(function (d) {
+      if (d.error) throw new Error(d.error);
+      setData(d);
+    }).catch(function () {
+      if (!data) { $('#status').hidden = false; $('#status').textContent = 'Не получилось загрузить. Обновите страницу.'; }
+    });
+  }
+
+  // ---------- цена, звёзды, фото ----------
 
   function priceRow(item) {
     var row = el('div', 'price');
-    var eur = item.priceEur;
+    var eur = Number(item.price);
     if (!(eur > 0)) return row;
     row.appendChild(el('span', 'price__main', num(eur) + ' €'));
-    if (RATE > 0) {
-      var v = eur * RATE;
+    if (data.rate > 0) {
+      var v = eur * data.rate;
       var step = v >= 10000 ? 1000 : (v >= 1000 ? 100 : 10);
       row.appendChild(el('span', 'price__alt', '≈ ' + num(Math.round(v / step) * step) + ' ₽'));
     }
@@ -515,7 +582,7 @@ button { font: inherit; color: inherit; }
     var box = el('div', cls);
     if (item.photo) {
       var img = el('img');
-      img.src = item.photo;
+      img.src = API + item.photo;
       img.alt = item.title;
       img.decoding = 'async';
       box.appendChild(img);
@@ -523,45 +590,21 @@ button { font: inherit; color: inherit; }
     return box;
   }
 
-  // ---------- кто что дарит ----------
-
-  var fromSheet = [];     // что отмечено в таблице
-  var mine = [];          // что отметили с этого устройства сейчас
-
-  function isTaken(item) {
-    return item.taken || fromSheet.indexOf(item.id) >= 0 || mine.indexOf(item.id) >= 0;
-  }
-
-  var lastAsk = 0;
-  function loadTaken() {
-    if (!DATA.sheetUrl || Date.now() - lastAsk < 20000) return;
-    lastAsk = Date.now();
-    WL.askSheet(DATA.sheetUrl, {}, function (ids) {
-      if (!ids) return;
-      fromSheet = ids;
-      refresh();
-    });
-  }
-
-  function give(item) {
-    if (mine.indexOf(item.id) < 0) mine.push(item.id);
-    WL.askSheet(DATA.sheetUrl, { take: item.id, title: item.title }, function (ids) {
-      if (ids) { fromSheet = ids; refresh(); }
-    });
-  }
-
   // ---------- список ----------
 
   var sort = 'wish';
+  var editing = false;
   var grid = $('#grid');
 
   function sorted() {
-    return ITEMS.map(function (item, index) { return { item: item, index: index }; })
+    return data.items.map(function (item, index) { return { item: item, index: index }; })
       .sort(function (a, b) {
-        var ta = isTaken(a.item) ? 1 : 0, tb = isTaken(b.item) ? 1 : 0;
-        if (ta !== tb) return ta - tb;
+        if (!editing) {
+          var ta = a.item.taken ? 1 : 0, tb = b.item.taken ? 1 : 0;
+          if (ta !== tb) return ta - tb;
+        }
         if (sort !== 'wish') {
-          var pa = a.item.priceEur, pb = b.item.priceEur;
+          var pa = Number(a.item.price) || 0, pb = Number(b.item.price) || 0;
           if (pa && !pb) return -1;
           if (pb && !pa) return 1;
           if (pa !== pb) return sort === 'cheap' ? pa - pb : pb - pa;
@@ -575,7 +618,7 @@ button { font: inherit; color: inherit; }
   function card(item) {
     var c = el('button', 'card');
     c.type = 'button';
-    if (isTaken(item)) {
+    if (item.taken) {
       c.classList.add('is-taken');
       var badge = el('span', 'badge');
       badge.appendChild(svg(LOCK, 13));
@@ -586,20 +629,21 @@ button { font: inherit; color: inherit; }
     c.appendChild(el('span', 'card__title', item.title || 'Без названия'));
     c.appendChild(priceRow(item));
     c.appendChild(stars(item.wish));
-    c.addEventListener('click', function () { openItem(item); });
+    c.addEventListener('click', function () {
+      if (editing) openForm(item); else openItem(item);
+    });
     return c;
   }
 
   function render() {
+    if (!data) return;
     grid.textContent = '';
     sorted().forEach(function (item) { grid.appendChild(card(item)); });
-    $('#empty').hidden = ITEMS.length > 0;
-    grid.hidden = ITEMS.length === 0;
-  }
-
-  function refresh() {
-    render();
-    if (current) buildDetail(current);
+    var empty = data.items.length === 0;
+    grid.hidden = empty;
+    $('#status').hidden = !empty;
+    $('#status').textContent = editing ? 'Пока пусто. Нажмите «Добавить подарок».' : 'Здесь пока пусто';
+    if (editing && document.activeElement !== $('#rateInput')) $('#rateInput').value = data.rate || '';
   }
 
   Array.prototype.forEach.call(document.querySelectorAll('.sort .chip'), function (b) {
@@ -612,15 +656,64 @@ button { font: inherit; color: inherit; }
     });
   });
 
-  // ---------- карточка подарка ----------
+  // ---------- панели поверх страницы ----------
 
   var scrim = $('#scrim');
+  var openPanel = null;
+  var pushed = false;
+  var hideTimer = 0;
+
+  function showPanel(panel) {
+    clearTimeout(hideTimer);
+    if (openPanel && openPanel !== panel) { openPanel.hidden = true; openPanel.classList.remove('is-open'); }
+    openPanel = panel;
+    if (!pushed) { history.pushState({ panel: 1 }, ''); pushed = true; }
+    document.body.classList.add('is-locked');
+    scrim.hidden = false;
+    panel.hidden = false;
+    panel.style.transform = '';
+    var scroller = panel.querySelector('.sheet__scroll');
+    if (scroller) scroller.scrollTop = 0;
+    requestAnimationFrame(function () {
+      requestAnimationFrame(function () {
+        scrim.classList.add('is-open');
+        panel.classList.add('is-open');
+      });
+    });
+  }
+
+  function closePanel(fromHistory) {
+    if (!openPanel) return;
+    if (!fromHistory && pushed) { history.back(); return; }
+    pushed = false;
+    var panel = openPanel;
+    openPanel = null;
+    current = null;
+    document.body.classList.remove('is-locked');
+    panel.style.transform = '';
+    scrim.style.opacity = '';
+    panel.classList.remove('is-open');
+    scrim.classList.remove('is-open');
+    hideTimer = setTimeout(function () {
+      panel.hidden = true;
+      scrim.hidden = true;
+    }, 320);
+  }
+
+  Array.prototype.forEach.call(document.querySelectorAll('[data-close]'), function (b) {
+    b.addEventListener('click', function () { closePanel(); });
+  });
+  scrim.addEventListener('click', function () { closePanel(); });
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closePanel(); });
+  window.addEventListener('popstate', function () { if (pushed) closePanel(true); });
+
+  // ---------- карточка подарка ----------
+
   var sheet = $('#sheet');
   var detail = $('#detail');
   var current = null;
   var confirming = false;
-  var pushed = false;
-  var hideTimer = 0;
+  var mine = [];
 
   function buildDetail(item) {
     detail.textContent = '';
@@ -643,7 +736,7 @@ button { font: inherit; color: inherit; }
       actions.appendChild(a);
     }
 
-    if (isTaken(item)) {
+    if (item.taken) {
       var taken = el('div', 'taken');
       taken.appendChild(svg(LOCK, 16));
       taken.appendChild(el('span', null, mine.indexOf(item.id) >= 0 ? 'Вы дарите это. Спасибо!' : 'Этот подарок уже занят'));
@@ -652,9 +745,16 @@ button { font: inherit; color: inherit; }
       var yes = el('button', 'btn btn--main', 'Да, дарю');
       yes.type = 'button';
       yes.addEventListener('click', function () {
-        confirming = false;
-        give(item);
-        refresh();
+        yes.disabled = true;
+        api('take', { id: item.id }).then(function (d) {
+          if (d.error) throw new Error(d.error);
+          confirming = false;
+          mine.push(item.id);
+          setData(d);
+        }).catch(function () {
+          yes.disabled = false;
+          toast('Не получилось отметить, попробуйте ещё раз');
+        });
       });
       var no = el('button', 'btn btn--quiet', 'Отмена');
       no.type = 'button';
@@ -675,71 +775,234 @@ button { font: inherit; color: inherit; }
   function openItem(item) {
     current = item;
     confirming = false;
-    clearTimeout(hideTimer);
     buildDetail(item);
-    if (!pushed) { history.pushState({ sheet: 1 }, ''); pushed = true; }
-
-    document.body.classList.add('is-locked');
-    scrim.hidden = false;
-    sheet.hidden = false;
-    sheet.style.transform = '';
-    $('#sheetScroll').scrollTop = 0;
-    requestAnimationFrame(function () {
-      requestAnimationFrame(function () {
-        scrim.classList.add('is-open');
-        sheet.classList.add('is-open');
-      });
-    });
+    showPanel(sheet);
   }
 
-  function closeSheet(fromHistory) {
-    if (sheet.hidden || !current) return;
-    if (!fromHistory && pushed) { history.back(); return; }
-    pushed = false;
-    current = null;
-    document.body.classList.remove('is-locked');
-    sheet.style.transform = '';
-    scrim.style.opacity = '';
-    sheet.classList.remove('is-open');
-    scrim.classList.remove('is-open');
-    hideTimer = setTimeout(function () {
-      sheet.hidden = true;
-      scrim.hidden = true;
-      detail.textContent = '';
-    }, 320);
-  }
-
-  $('#sheetClose').addEventListener('click', function () { closeSheet(); });
-  scrim.addEventListener('click', function () { closeSheet(); });
-  document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeSheet(); });
-  window.addEventListener('popstate', function () { if (pushed) closeSheet(true); });
-
-  // Свайп вниз закрывает карточку на телефоне
-  (function () {
+  // Свайп вниз закрывает панель на телефоне
+  Array.prototype.forEach.call(document.querySelectorAll('.sheet'), function (panel) {
     var startY = 0, dy = 0, active = false;
-    var scroller = $('#sheetScroll');
-    sheet.addEventListener('touchstart', function (e) {
-      active = window.innerWidth < 760 && scroller.scrollTop <= 0 && e.touches.length === 1;
+    var scroller = panel.querySelector('.sheet__scroll');
+    panel.addEventListener('touchstart', function (e) {
+      var t = e.target;
+      active = window.innerWidth < 760 && e.touches.length === 1 && (!scroller || scroller.scrollTop <= 0) &&
+        !(t.closest && t.closest('input, textarea'));
       startY = active ? e.touches[0].clientY : 0;
       dy = 0;
     }, { passive: true });
-    sheet.addEventListener('touchmove', function (e) {
+    panel.addEventListener('touchmove', function (e) {
       if (!active) return;
       dy = e.touches[0].clientY - startY;
-      if (dy <= 0) { dy = 0; sheet.style.transform = ''; return; }
+      if (dy <= 0) { dy = 0; panel.style.transform = ''; return; }
       if (e.cancelable) e.preventDefault();
-      sheet.style.transition = 'none';
-      sheet.style.transform = 'translateY(' + dy + 'px)';
+      panel.style.transition = 'none';
+      panel.style.transform = 'translateY(' + dy + 'px)';
       scrim.style.opacity = String(Math.max(0, 1 - dy / 400));
     }, { passive: false });
-    sheet.addEventListener('touchend', function () {
+    panel.addEventListener('touchend', function () {
       if (!active) return;
       active = false;
-      sheet.style.transition = '';
-      if (dy > 110) closeSheet();
-      else { sheet.style.transform = ''; scrim.style.opacity = ''; }
+      panel.style.transition = '';
+      if (dy > 110) closePanel();
+      else { panel.style.transform = ''; scrim.style.opacity = ''; }
     });
-  })();
+  });
+
+  // ---------- вход в правку: 5 нажатий на заголовок ----------
+
+  var taps = 0, tapTimer = 0;
+  $('#title').addEventListener('click', function () {
+    taps++;
+    clearTimeout(tapTimer);
+    tapTimer = setTimeout(function () { taps = 0; }, 2000);
+    if (taps < 5) return;
+    taps = 0;
+    if (editing) return;
+    var saved = read(CODE_KEY);
+    if (saved) {
+      api('login', { code: saved }).then(function (d) {
+        if (d.ok) startEditing(saved); else { store(CODE_KEY, null); askCode(); }
+      }).catch(function () { toast('Нет связи, попробуйте ещё раз'); });
+    } else {
+      askCode();
+    }
+  });
+
+  var codeSheet = $('#codeSheet');
+  function askCode() {
+    $('#codeInput').value = '';
+    showPanel(codeSheet);
+    setTimeout(function () { $('#codeInput').focus(); }, 350);
+  }
+
+  $('#codeForm').addEventListener('submit', function (e) {
+    e.preventDefault();
+    var code = $('#codeInput').value.trim();
+    if (!code) return;
+    var btn = $('#codeBtn');
+    btn.disabled = true;
+    api('login', { code: code }).then(function (d) {
+      btn.disabled = false;
+      if (!d.ok) { toast(d.error || 'Неверный код'); return; }
+      store(CODE_KEY, code);
+      closePanel();
+      startEditing(code);
+      if (d.created) toast('Код сохранён. Запомните его');
+    }).catch(function () {
+      btn.disabled = false;
+      toast('Нет связи, попробуйте ещё раз');
+    });
+  });
+
+  var code = null;
+  function startEditing(c) {
+    code = c;
+    editing = true;
+    $('#editbar').hidden = false;
+    render();
+  }
+
+  $('#exitBtn').addEventListener('click', function () {
+    editing = false;
+    code = null;
+    $('#editbar').hidden = true;
+    render();
+  });
+
+  $('#rateInput').addEventListener('change', function () {
+    var rate = parseFloat(String(this.value).replace(',', '.'));
+    if (!(rate > 0)) { toast('Впишите курс числом'); return; }
+    api('rate', { code: code, rate: rate }).then(function (d) {
+      if (!d.ok) throw new Error(d.error);
+      setData(d);
+      toast('Курс сохранён');
+    }).catch(function () { toast('Не получилось сохранить курс'); });
+  });
+
+  // ---------- форма подарка ----------
+
+  var form = $('#form');
+  var buf = null;
+  var initialTaken = false;
+  var fTitle = $('#fTitle'), fPrice = $('#fPrice'), fUrl = $('#fUrl'), fTaken = $('#fTaken');
+  var photoBtn = $('#photoBtn'), photoImg = $('#photoImg'), photoText = $('#photoText');
+  var starsBox = $('#fStars');
+
+  for (var s = 1; s <= 5; s++) {
+    (function (v) {
+      var b = el('button');
+      b.type = 'button';
+      b.setAttribute('aria-label', v + ' из 5');
+      b.innerHTML = '<svg width="26" height="26" viewBox="0 0 20 20" aria-hidden="true"><path d="' + STAR + '" fill="currentColor"/></svg>';
+      b.addEventListener('click', function () { buf.wish = v; paintStars(); });
+      starsBox.appendChild(b);
+    })(s);
+  }
+
+  function paintStars() {
+    Array.prototype.forEach.call(starsBox.children, function (b, i) {
+      b.classList.toggle('is-on', i < buf.wish);
+    });
+  }
+
+  function paintPhoto() {
+    var src = buf.newPhoto || (buf.photo ? API + buf.photo : '');
+    photoImg.hidden = !src;
+    if (src) photoImg.src = src; else photoImg.removeAttribute('src');
+    photoText.textContent = src ? 'Заменить фото' : 'Выбрать фото';
+    photoBtn.classList.toggle('has-photo', !!src);
+  }
+
+  function openForm(item) {
+    buf = item ? { id: item.id, title: item.title, price: item.price, wish: item.wish, url: item.url, photo: item.photo, taken: item.taken, newPhoto: '' }
+               : { id: '', title: '', price: 0, wish: 3, url: '', photo: '', taken: false, newPhoto: '' };
+    initialTaken = !!buf.taken;
+    $('#formTitle').textContent = item ? 'Подарок' : 'Новый подарок';
+    fTitle.value = buf.title;
+    fPrice.value = buf.price > 0 ? buf.price : '';
+    fUrl.value = buf.url;
+    fTaken.checked = !!buf.taken;
+    $('#formDelete').hidden = !item;
+    $('#formDone').disabled = false;
+    paintStars();
+    paintPhoto();
+    showPanel(form);
+  }
+
+  $('#addBtn').addEventListener('click', function () { openForm(null); });
+
+  $('#formDone').addEventListener('click', function () {
+    var title = fTitle.value.trim();
+    if (!title) { toast('Впишите название'); fTitle.focus(); return; }
+    var url = fUrl.value.trim();
+    if (url && !/^[a-z][a-z0-9+.-]*:/i.test(url)) url = 'https://' + url;
+
+    var item = {
+      id: buf.id,
+      title: title,
+      price: parseFloat(String(fPrice.value).replace(',', '.')) || 0,
+      wish: buf.wish,
+      url: url
+    };
+    if (buf.newPhoto) item.photo = buf.newPhoto;
+    if (fTaken.checked !== initialTaken) item.taken = fTaken.checked;
+
+    var btn = $('#formDone');
+    btn.disabled = true;
+    btn.textContent = 'Сохраняю…';
+    api('item', { code: code, item: item }).then(function (d) {
+      btn.disabled = false;
+      btn.textContent = 'Готово';
+      if (!d.ok) throw new Error(d.error);
+      setData(d);
+      closePanel();
+      toast('Сохранено');
+    }).catch(function (err) {
+      btn.disabled = false;
+      btn.textContent = 'Готово';
+      toast(err && err.message && err.message !== 'Failed to fetch' ? err.message : 'Не получилось сохранить');
+    });
+  });
+
+  $('#formDelete').addEventListener('click', function () {
+    if (!buf.id || !confirm('Удалить «' + (buf.title || 'подарок') + '»?')) return;
+    api('delete', { code: code, id: buf.id }).then(function (d) {
+      if (!d.ok) throw new Error(d.error);
+      setData(d);
+      closePanel();
+      toast('Удалено');
+    }).catch(function () { toast('Не получилось удалить'); });
+  });
+
+  photoBtn.addEventListener('click', function () { $('#photoInput').click(); });
+  $('#photoInput').addEventListener('change', function () {
+    var file = this.files && this.files[0];
+    this.value = '';
+    if (!file) return;
+    photoText.textContent = 'Готовлю фото…';
+    var objectUrl = URL.createObjectURL(file);
+    var img = new Image();
+    img.onload = function () {
+      URL.revokeObjectURL(objectUrl);
+      var w = img.naturalWidth, h = img.naturalHeight;
+      var k = Math.min(1, PHOTO_SIDE / Math.max(w, h));
+      var c = document.createElement('canvas');
+      c.width = Math.max(1, Math.round(w * k));
+      c.height = Math.max(1, Math.round(h * k));
+      var ctx = c.getContext('2d');
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, c.width, c.height);
+      ctx.drawImage(img, 0, 0, c.width, c.height);
+      buf.newPhoto = c.toDataURL('image/jpeg', PHOTO_Q);
+      paintPhoto();
+    };
+    img.onerror = function () {
+      URL.revokeObjectURL(objectUrl);
+      paintPhoto();
+      toast('Не получилось открыть фото');
+    };
+    img.src = objectUrl;
+  });
 
   // ---------- сообщение ----------
 
@@ -749,17 +1012,21 @@ button { font: inherit; color: inherit; }
     toastEl.textContent = text;
     toastEl.classList.add('is-on');
     clearTimeout(toastTimer);
-    toastTimer = setTimeout(function () { toastEl.classList.remove('is-on'); }, 2400);
+    toastTimer = setTimeout(function () { toastEl.classList.remove('is-on'); }, 2600);
   }
 
   // ---------- старт ----------
 
-  render();
-  loadTaken();
+  try {
+    var cached = JSON.parse(read(CACHE_KEY) || 'null');
+    if (cached && Array.isArray(cached.items)) { data = cached; render(); }
+  } catch (e) {}
+  load();
   document.addEventListener('visibilitychange', function () {
-    if (document.visibilityState === 'visible') loadTaken();
+    if (document.visibilityState === 'visible' && Date.now() - lastLoad > 20000) load();
   });
 })();
+
 </script>
 </body>
 </html>
