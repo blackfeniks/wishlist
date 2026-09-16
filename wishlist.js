@@ -1,8 +1,8 @@
 // Данные вишлиста. Меняются через edit.html.
 window.WISHLIST = {
-  "updated": 1789564961561,
+  "updated": 1789571256891,
   "eurToRub": 95,
-  "sheetUrl": "",
+  "sheetUrl": "https://script.google.com/macros/s/AKfycbySfvG_9h4cqV7Mv32ySY4H4EUVQwofxVL98oUyHkgFyfUQqHXeVwTJwb6xsKQjfq5V/exec",
   "items": [
     {
       "id": "tv-55",
