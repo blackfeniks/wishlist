@@ -399,9 +399,33 @@ button { font: inherit; color: inherit; }
     return d;
   }
 
-  // Запрос к Гугл-таблице. Работает через тег <script>, поэтому браузер не блокирует.
+  // Запрос к Гугл-таблице. Сначала обычным способом, если не вышло — через тег <script>.
   function askSheet(sheetUrl, params, done) {
     if (!sheetUrl) { done(null); return; }
+    var q = [];
+    Object.keys(params || {}).forEach(function (k) {
+      q.push(encodeURIComponent(k) + '=' + encodeURIComponent(params[k]));
+    });
+    q.push('t=' + Date.now());
+    var url = sheetUrl + (sheetUrl.indexOf('?') >= 0 ? '&' : '?') + q.join('&');
+
+    if (!window.fetch) { viaScript(url, done); return; }
+    var ctrl = window.AbortController ? new AbortController() : null;
+    var timer = setTimeout(function () { if (ctrl) ctrl.abort(); }, 15000);
+    fetch(url, ctrl ? { signal: ctrl.signal } : {})
+      .then(function (r) { if (!r.ok) throw new Error('status'); return r.json(); })
+      .then(function (data) {
+        clearTimeout(timer);
+        if (!Array.isArray(data)) throw new Error('format');
+        done(data.map(String));
+      })
+      .catch(function () {
+        clearTimeout(timer);
+        viaScript(url, done);
+      });
+  }
+
+  function viaScript(url, done) {
     var name = 'wl_' + Date.now() + '_' + Math.floor(Math.random() * 1e6);
     var tag = document.createElement('script');
     var finished = false;
@@ -417,13 +441,7 @@ button { font: inherit; color: inherit; }
     }
 
     window[name] = finish;
-    var q = [];
-    Object.keys(params || {}).forEach(function (k) {
-      q.push(encodeURIComponent(k) + '=' + encodeURIComponent(params[k]));
-    });
-    q.push('callback=' + name);
-    q.push('t=' + Date.now());
-    tag.src = sheetUrl + (sheetUrl.indexOf('?') >= 0 ? '&' : '?') + q.join('&');
+    tag.src = url + '&callback=' + name;
     tag.onerror = function () { finish(null); };
     document.head.appendChild(tag);
   }
